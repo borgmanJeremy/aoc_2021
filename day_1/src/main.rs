@@ -5,22 +5,22 @@ fn read_from_file(path: &str) -> Vec<i32> {
     let file = File::open(path).unwrap();
     let reader = BufReader::new(file);
 
-    let mut data = Vec::new();
-    for line in reader.lines() {
-        match line {
-            Ok(text) => {
-                data.push(text.parse::<i32>().unwrap());
+    let data: Vec<i32> = reader
+        .lines()
+        .map(|line| {
+            if let Ok(text) = line {
+                text.parse::<i32>().unwrap()
+            } else {
+                panic!("Failed to parse")
             }
-            Err(err) => {
-                println!("Error reading line:{} ", err);
-            }
-        }
-    }
+        })
+        .collect();
+
     data
 }
 
 fn main() {
-    let input_data = read_from_file("/Users/jeremy/github/aoc_2021/day_1/input/input_1.txt");
+    let input_data = read_from_file("input/input_1.txt");
 
     let part_1: i32 = input_data
         .windows(2)
