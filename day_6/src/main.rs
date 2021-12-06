@@ -3,7 +3,7 @@ use std::io::{prelude::*, BufReader};
 
 #[derive(Clone, Debug)]
 struct FishPopulation {
-    population: Vec<i32>,
+    population: Vec<i64>,
 }
 
 impl FishPopulation {
@@ -36,8 +36,8 @@ fn read_from_file(path: &str) -> FishPopulation {
         .unwrap()
         .unwrap()
         .split(',')
-        .map(|x| x.parse::<i32>().unwrap())
-        .collect::<Vec<i32>>();
+        .map(|x| x.parse::<i64>().unwrap())
+        .collect::<Vec<i64>>();
     input.sort_unstable();
 
     let mut population = FishPopulation::new();
@@ -52,7 +52,7 @@ fn main() {
     let mut population = read_from_file("input/input.txt");
 
     println!("{:?}", population);
-    for day in 0..80 {
+    for day in 0..256 {
         population.step();
         println!("Day: {}, {:?}", day, population);
     }
