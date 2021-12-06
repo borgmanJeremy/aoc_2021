@@ -24,10 +24,6 @@ impl LineSegment {
         self.p1.y == self.p2.y
     }
 
-    fn is_straight(&self) -> bool {
-        self.is_vertical() || self.is_horizontal()
-    }
-
     fn extend(&self) -> Option<Vec<Point>> {
         let mut full_line = Vec::new();
         if self.is_horizontal() {
@@ -36,14 +32,30 @@ impl LineSegment {
             }
             return Some(full_line);
         } else if self.is_vertical() {
-            println!("{} {} ", self.p1.y, self.p2.y);
             for y in cmp::min(self.p1.y, self.p2.y)..=cmp::max(self.p1.y, self.p2.y) {
-                println!("{}", y);
                 full_line.push(Point { x: self.p1.x, y });
             }
             return Some(full_line);
+        } else {
+            let min_x = cmp::min(self.p1.x, self.p2.x);
+            let max_x = cmp::max(self.p1.x, self.p2.x);
+
+            let slope_x = max_x - min_x;
+            let slope_y: i32;
+            if max_x == self.p1.x {
+                slope_y = self.p1.y - self.p2.y
+            } else {
+                slope_y = self.p2.y - self.p1.y
+            }
+            let b = self.p1.y - (self.p1.x * slope_y) / slope_x;
+            for x in cmp::min(self.p1.x, self.p2.x)..=cmp::max(self.p1.x, self.p2.x) {
+                full_line.push(Point {
+                    x,
+                    y: (x * slope_y) / slope_x + b,
+                });
+            }
+            Some(full_line)
         }
-        None
     }
 }
 
@@ -83,6 +95,19 @@ fn read_from_file(path: &str) -> Vec<LineSegment> {
     line_list
 }
 
+fn print_map(map: &HashMap<Point, i32>, max_x: i32, max_y: i32) {
+    println!("map");
+    for y in 0..=max_y {
+        for x in 0..=max_x {
+            match map.get(&Point { x, y }) {
+                Some(val) => print!("{}", val),
+                None => print!("."),
+            }
+        }
+        println!("");
+    }
+}
+
 fn main() {
     let line_list = read_from_file("input/input.txt");
 
@@ -112,6 +137,8 @@ fn main() {
                 }
             }
         }
+
+        // print_map(&map, max_x, max_y);
     }
 
     let mut count = 0;
@@ -121,6 +148,5 @@ fn main() {
         }
     }
 
-    println!("{:?}", map);
     println!("count: {:?}", count);
 }
