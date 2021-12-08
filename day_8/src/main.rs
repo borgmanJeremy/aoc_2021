@@ -115,7 +115,7 @@ fn get_key_map(temp: &Vec<Vec<char>>) -> HashMap<i32, Vec<char>> {
 }
 
 fn main() {
-    let input = read_from_file("input/sample.txt");
+    let input = read_from_file("input/input.txt");
 
     // Part 1
     let mut count = 0;
@@ -132,15 +132,38 @@ fn main() {
     }
     println!("Count: {}", count);
 
-    let temp: Vec<Vec<char>> = input[0]
-        .sequence
-        .clone()
-        .iter()
-        .map(|x| x.chars().collect::<Vec<char>>())
-        .collect();
+    // Part 2
+    let mut sum = 0;
+    for gahh in &input {
+        let temp: Vec<Vec<char>> = gahh
+            .sequence
+            .clone()
+            .iter()
+            .map(|x| x.chars().collect::<Vec<char>>())
+            .collect();
 
-    let key_map = get_key_map(&temp);
-    if key_map.len() != 10 {
-        panic!("Not fully decoded");
+        let key_map = get_key_map(&temp);
+        if key_map.len() != 10 {
+            panic!("Not fully decoded");
+        }
+
+        let mut decoded = Vec::new();
+        for item in &gahh.output {
+            for (key, value) in &key_map {
+                if has_all_of(&item.chars().collect::<Vec<char>>(), &value)
+                    && has_all_of(&value, &item.chars().collect::<Vec<char>>())
+                {
+                    decoded.push(key);
+                    break;
+                }
+            }
+        }
+        if decoded.len() != 4 {
+            panic!("not fully decoded");
+        }
+        let decoded_val = 1000 * decoded[0] + 100 * decoded[1] + 10 * decoded[2] + decoded[3];
+        sum += decoded_val;
+        println!("decoded: {:?}", decoded_val);
     }
+    println!("sum: {}", sum);
 }
