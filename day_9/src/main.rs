@@ -6,7 +6,7 @@ struct DepthMap {
     map: Vec<Vec<i32>>,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 struct Point {
     x: usize,
     y: usize,
@@ -41,6 +41,44 @@ impl DepthMap {
 
     fn nrows(&self) -> usize {
         self.map.len()
+    }
+
+    fn get_neighbors_and_point(&self, input: &Point) -> Vec<(Point, i32)> {
+        let mut neighbors = Vec::new();
+
+        let nrow = self.nrows();
+        let ncol = self.ncols();
+
+        if input.x > 0 {
+            let temp_point = Point {
+                x: input.x - 1,
+                y: input.y,
+            };
+            neighbors.push((temp_point.clone(), self.val_at(&temp_point)));
+        }
+        if input.x < ncol - 1 {
+            let temp_point = Point {
+                x: input.x + 1,
+                y: input.y,
+            };
+            neighbors.push((temp_point.clone(), self.val_at(&temp_point)));
+        }
+        if input.y > 0 {
+            let temp_point = Point {
+                x: input.x,
+                y: input.y - 1,
+            };
+            neighbors.push((temp_point.clone(), self.val_at(&temp_point)));
+        }
+        if input.y < nrow - 1 {
+            let temp_point = Point {
+                x: input.x,
+                y: input.y + 1,
+            };
+            neighbors.push((temp_point.clone(), self.val_at(&temp_point)));
+        }
+
+        neighbors
     }
 
     fn get_neighbors(&self, input: &Point) -> Vec<i32> {
@@ -103,6 +141,7 @@ fn main() {
     let input = read_from_file("input/input.txt");
     input.print();
 
+    let mut basin_location: Vec<Point> = Vec::new();
     // Part 1
     let mut risk_level = 0;
     for x in 0..input.ncols() {
@@ -116,8 +155,43 @@ fn main() {
             }
             if highest {
                 risk_level += 1 + input.val_at(&Point { x, y });
+                basin_location.push(Point { x, y });
             }
         }
     }
     println!("count: {}", risk_level);
+
+    //Part 2
+    println!("Basins: {:?}", basin_location);
+
+    let mut len_list = Vec::new();
+    for basin in &basin_location {
+        let mut basin_list: Vec<Point> = Vec::new();
+        let mut check_list: Vec<Point> = Vec::new();
+
+        check_list.push(basin.clone());
+        basin_list.push(basin.clone());
+
+        loop {
+            if check_list.is_empty() {
+                break;
+            }
+
+            let neighbor_list = input.get_neighbors_and_point(&check_list[0]);
+
+            for item in &neighbor_list {
+                if item.1 != 9 && !basin_list.contains(&item.0) {
+                    basin_list.push(item.0.clone());
+                    check_list.push(item.0.clone());
+                }
+            }
+            check_list.remove(0);
+        }
+        len_list.push(basin_list.len());
+        // println!("Basin: {:?}", basin_list);
+        // println!("Basin Size: {:?}", basin_list.len());
+    }
+
+    len_list.sort_by(|a, b| b.cmp(a));
+    println!("{:?}", &len_list[0..3]);
 }
