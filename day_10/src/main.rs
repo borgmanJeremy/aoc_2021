@@ -77,7 +77,7 @@ fn main() {
     let input = read_from_file("input/input.txt");
 
     // Part 1
-    let mut score: i64 = 0;
+    let mut score: u64 = 0;
     for line in &input {
         if let Some(c) = find_improper_close(line) {
             match c {
