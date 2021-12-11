@@ -212,13 +212,20 @@ fn main() {
     println!("\nOriginal Map");
     input.print();
 
-    for tick_count in 0..100 {
+    let mut old_flash_count;
+    for tick_count in 0..1000 {
+        old_flash_count = input.total_flashes;
         input.tick();
         println!(
             "generation: {}, total flashes: {}",
             tick_count + 1,
             input.total_flashes
         );
+
+        if input.total_flashes - old_flash_count == 100 {
+            println!("found bring flash at generation: {}", tick_count + 1);
+            break;
+        }
     }
     println!("total flashes: {}", input.total_flashes);
 }
