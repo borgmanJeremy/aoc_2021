@@ -1,6 +1,8 @@
 use itertools::Itertools;
+use std::collections::HashMap;
 use std::fs::File;
 use std::io::{prelude::*, BufReader};
+
 #[derive(Debug, Clone, PartialEq)]
 struct Formula {
     input: Vec<char>,
@@ -41,26 +43,62 @@ fn read_from_file(path: &str) -> (Vec<Formula>, Vec<char>) {
     (formula_list, start_chain)
 }
 fn main() {
-    let input = read_from_file("input/sample.txt");
+    let input = read_from_file("input/input.txt");
     let formula_list = input.0;
     let starting_chain = input.1;
 
-    println!("Start Chain: {:?}", starting_chain);
-    println!("Formulas: {:?}", formula_list);
+    // println!("Start Chain: {:?}", starting_chain);
+    // println!("Formulas: {:?}", formula_list);
 
-    let mut atom_list = Vec::new();
-    for idx in 0..starting_chain.len() - 1 {
-        let pair = vec![starting_chain[idx], starting_chain[idx + 1]];
-        let atom = lookup_recipe(&pair, &formula_list).unwrap();
-        atom_list.push(atom);
+    let mut new_chain = starting_chain.clone();
+    for _step in 0..10 {
+        let mut atom_list = Vec::new();
+
+        for idx in 0..new_chain.len() - 1 {
+            let pair = vec![new_chain[idx], new_chain[idx + 1]];
+            let atom = lookup_recipe(&pair, &formula_list).unwrap();
+            atom_list.push(atom);
+        }
+
+        let mut tmp_chain = Vec::new();
+        for idx in 0..new_chain.len() {
+            tmp_chain.push(new_chain[idx]);
+            if idx < atom_list.len() {
+                tmp_chain.push(atom_list[idx]);
+            }
+        }
+
+        new_chain = tmp_chain.clone();
     }
 
-    let mut new_chain = Vec::new();
-    for idx in 0..starting_chain.len() {
-        new_chain.push(starting_chain[idx]);
-        if idx < atom_list.len() {
-            new_chain.push(atom_list[idx]);
+    let mut atom_count = HashMap::new();
+    for atom in &new_chain {
+        if atom_count.contains_key(atom) {
+            atom_count.insert(atom, atom_count.get(atom).unwrap() + 1);
+        } else {
+            atom_count.insert(atom, 1);
         }
     }
-    println!("{:?}", new_chain);
+    let mut min_val = i32::MAX;
+    let mut max_val = 0;
+    let mut min_key = 'x';
+    let mut max_key = 'x';
+
+    for (k, v) in &atom_count {
+        if *v < min_val {
+            min_val = *v;
+            min_key = **k;
+        }
+
+        if *v > max_val {
+            max_val = *v;
+            max_key = **k;
+        }
+    }
+    println!("{:?}", atom_count);
+
+    println!(
+        "max(k,v): ({},{}) min(k,v): ({},{})",
+        max_key, max_val, min_key, min_val
+    );
 }
