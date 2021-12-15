@@ -1,4 +1,3 @@
-use itertools::Itertools;
 use std::collections::HashMap;
 use std::fs::File;
 use std::io::{prelude::*, BufReader};
@@ -51,7 +50,8 @@ fn main() {
     // println!("Formulas: {:?}", formula_list);
 
     let mut new_chain = starting_chain.clone();
-    for _step in 0..10 {
+    for _step in 0..40 {
+        println!("{}", _step);
         let mut atom_list = Vec::new();
 
         for idx in 0..new_chain.len() - 1 {
@@ -68,7 +68,7 @@ fn main() {
             }
         }
 
-        new_chain = tmp_chain.clone();
+        new_chain = tmp_chain;
     }
 
     let mut atom_count = HashMap::new();
