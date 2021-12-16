@@ -7,6 +7,7 @@ use nom::{
 #[derive(Debug, Clone, PartialEq, Eq)]
 enum TypeId {
     Literal,
+    Operator,
 }
 
 fn char_to_bool_vec(input: char) -> Vec<u8> {
@@ -87,6 +88,9 @@ fn main() {
                 }
             });
             println!("literal: {}", literal);
+        }
+        TypeId::Operator => {
+            todo!()
         }
     }
     println!(
