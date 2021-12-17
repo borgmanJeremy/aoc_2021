@@ -56,6 +56,32 @@ fn get_version(b: &[u8]) -> IResult<&[u8], u8> {
     Ok((b, ver[0] * 4 + ver[1] * 2 + ver[2]))
 }
 
+fn parse_literal(input: &[u8]) -> (&[u8], u32) {
+    let mut persistant_input = input;
+    let mut val_list = Vec::new();
+
+    loop {
+        let (input, is_last) = is_last_literal(&persistant_input).unwrap();
+        let (input, val) = literal_value(&input).unwrap();
+        val_list.push(val);
+        persistant_input = input;
+        if is_last {
+            break;
+        }
+    }
+    let literal = val_list.iter().enumerate().fold(0, |acc, (idx, val)| {
+        if idx != val_list.len() - 1 {
+            let exp = u32::pow(2, (val_list.len() - idx) as u32);
+            acc + ((*val as u32) << exp)
+        } else {
+            let exp = 0;
+            acc + ((*val as u32) << exp)
+        }
+    });
+
+    (persistant_input, literal)
+}
+
 fn main() {
     let raw_input: Vec<u8> = "D2FE28"
         .chars()
@@ -64,29 +90,10 @@ fn main() {
         .collect();
 
     let (input, version) = get_version(&raw_input).unwrap();
-    let (input, type_id) = is_literal(&input).unwrap();
+    let (input, type_id) = is_literal(input).unwrap();
     match type_id {
         TypeId::Literal => {
-            let mut persistant_input = input;
-            let mut val_list = Vec::new();
-            loop {
-                let (input, is_last) = is_last_literal(&persistant_input).unwrap();
-                let (input, val) = literal_value(&input).unwrap();
-                val_list.push(val);
-                persistant_input = input;
-                if is_last {
-                    break;
-                }
-            }
-            let literal = val_list.iter().enumerate().fold(0, |acc, (idx, val)| {
-                if idx != val_list.len() - 1 {
-                    let exp = u32::pow(2, (val_list.len() - idx) as u32);
-                    acc + ((*val as u32) << exp)
-                } else {
-                    let exp = 0;
-                    acc + ((*val as u32) << exp)
-                }
-            });
+            let (input, literal) = parse_literal(input);
             println!("literal: {}", literal);
         }
         TypeId::Operator => {
