@@ -11,7 +11,11 @@ enum TypeId {
     Literal,
     Operator,
 }
-
+#[derive(Debug, Clone, PartialEq, Eq)]
+enum LengthType {
+    PacketLength,
+    PacketCount,
+}
 fn char_to_bool_vec(input: char) -> Vec<u8> {
     match input {
         '0' => vec![0, 0, 0, 0],
@@ -74,6 +78,26 @@ fn is_operator(b: &[u8]) -> IResult<&[u8], TypeId> {
     Ok((res, TypeId::Operator))
 }
 
+fn subpacket_length(b: &[u8]) -> IResult<&[u8], LengthType> {
+    let (b, is_eleven_bit) = take(1usize)(b)?;
+    if is_eleven_bit == [1] {
+        Ok((b, LengthType::PacketCount))
+    } else {
+        Ok((b, LengthType::PacketLength))
+    }
+}
+
+fn take_as_u8(b: &[u8], n: usize) -> IResult<&[u8], usize> {
+    let (b, count) = take(n)(b)?;
+
+    let mut sum = 0;
+    for (idx, bit) in count.iter().rev().enumerate() {
+        sum += u32::pow(2 * (*bit as u32), idx as u32);
+    }
+
+    Ok((b, sum as usize))
+}
+
 fn is_last_literal(b: &[u8]) -> IResult<&[u8], bool> {
     let (b, is_last) = take(1usize)(b)?;
     if is_last == [0] {
@@ -119,26 +143,57 @@ fn parse_literal(input: &[u8]) -> (&[u8], u32) {
     (persistant_input, literal)
 }
 
+fn parse_packet(input: &[u8]) -> (&[u8], usize) {
+    let starting_size = input.len();
+    let (input, version) = get_version(&input).unwrap();
+    let (input, type_id) = alt((is_literal, is_operator))(input).unwrap();
+    match type_id {
+        TypeId::Literal => {
+            let (input, literal) = parse_literal(input);
+            let ending_size = input.len();
+            let bits_parsed = starting_size - ending_size;
+            println!("literal: {}", literal);
+            return (input, bits_parsed);
+        }
+        TypeId::Operator => {
+            let (input, subpacket_type) = subpacket_length(input).unwrap();
+            match subpacket_type {
+                LengthType::PacketLength => {
+                    let (input, subpacket_len) = take_as_u8(input, 15).unwrap();
+                    println!("subpacket len: {}", subpacket_len);
+                    let mut total_parsed = 0;
+                    let mut persistent_input = input;
+                    loop {
+                        let res = parse_packet(&persistent_input);
+                        total_parsed += res.1;
+                        persistent_input = res.0;
+                        if total_parsed >= subpacket_len {
+                            break;
+                        }
+                    }
+                    let ending_size = input.len();
+                    let bits_parsed = starting_size - ending_size;
+                    return (input, bits_parsed);
+                }
+                LengthType::PacketCount => {
+                    let (input, subpacket_len) = take_as_u8(input, 11).unwrap();
+                    println!("subpacket len: {}", subpacket_len);
+                    parse_packet(&input);
+                    let ending_size = input.len();
+                    let bits_parsed = starting_size - ending_size;
+                    return (input, bits_parsed);
+                }
+            }
+        }
+    }
+}
+
 fn main() {
-    let raw_input: Vec<u8> = "D2FE28"
+    let input: Vec<u8> = "38006F45291200"
         .chars()
         .map(|c| char_to_bool_vec(c))
         .flatten()
         .collect();
 
-    let (input, version) = get_version(&raw_input).unwrap();
-    let (input, type_id) = alt((is_literal, is_operator))(input).unwrap();
-    match type_id {
-        TypeId::Literal => {
-            let (input, literal) = parse_literal(input);
-            println!("literal: {}", literal);
-        }
-        TypeId::Operator => {
-            todo!()
-        }
-    }
-    println!(
-        "version: {:?} type id: {:?}, rest: {:?} ",
-        version, type_id, input
-    );
+    parse_packet(&input);
 }
