@@ -1,7 +1,9 @@
 use nom::{
-    bytes::complete::{is_a, tag, take},
-    sequence::tuple,
-    IResult,
+    branch::alt,
+    bytes::complete::{tag, take},
+    error::Error,
+    error::ErrorKind,
+    Err, IResult,
 };
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -35,6 +37,41 @@ fn char_to_bool_vec(input: char) -> Vec<u8> {
 fn is_literal(b: &[u8]) -> IResult<&[u8], TypeId> {
     let (res, _) = tag([1, 0, 0])(b)?;
     Ok((res, TypeId::Literal))
+}
+
+fn is_op_0(b: &[u8]) -> IResult<&[u8], TypeId> {
+    let (res, _) = tag([0, 0, 0])(b)?;
+    Ok((res, TypeId::Operator))
+}
+fn is_op_1(b: &[u8]) -> IResult<&[u8], TypeId> {
+    let (res, _) = tag([0, 0, 1])(b)?;
+    Ok((res, TypeId::Operator))
+}
+fn is_op_2(b: &[u8]) -> IResult<&[u8], TypeId> {
+    let (res, _) = tag([0, 1, 0])(b)?;
+    Ok((res, TypeId::Operator))
+}
+
+fn is_op_3(b: &[u8]) -> IResult<&[u8], TypeId> {
+    let (res, _) = tag([0, 1, 1])(b)?;
+    Ok((res, TypeId::Operator))
+}
+fn is_op_5(b: &[u8]) -> IResult<&[u8], TypeId> {
+    let (res, _) = tag([1, 0, 1])(b)?;
+    Ok((res, TypeId::Operator))
+}
+fn is_op_6(b: &[u8]) -> IResult<&[u8], TypeId> {
+    let (res, _) = tag([1, 1, 0])(b)?;
+    Ok((res, TypeId::Operator))
+}
+fn is_op_7(b: &[u8]) -> IResult<&[u8], TypeId> {
+    let (res, _) = tag([1, 1, 1])(b)?;
+    Ok((res, TypeId::Operator))
+}
+
+fn is_operator(b: &[u8]) -> IResult<&[u8], TypeId> {
+    let (res, _) = alt((is_op_1, is_op_2, is_op_3, is_op_5, is_op_6, is_op_7))(b)?;
+    Ok((res, TypeId::Operator))
 }
 
 fn is_last_literal(b: &[u8]) -> IResult<&[u8], bool> {
@@ -90,7 +127,7 @@ fn main() {
         .collect();
 
     let (input, version) = get_version(&raw_input).unwrap();
-    let (input, type_id) = is_literal(input).unwrap();
+    let (input, type_id) = alt((is_literal, is_operator))(input).unwrap();
     match type_id {
         TypeId::Literal => {
             let (input, literal) = parse_literal(input);
